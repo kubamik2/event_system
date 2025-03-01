@@ -42,7 +42,7 @@ impl EventManager {
     pub fn add_system<S: EventSystem + 'static + Send + Sync, F: FnOnce(Context) -> S>(&mut self, f: F) {
         let system = f(self.ctx());
 
-        assert!(self.systems.insert(TypeId::of::<S>(), Box::new(system)).is_some(), "duplicate event system");
+        assert!(self.systems.insert(TypeId::of::<S>(), Box::new(system)).is_none(), "duplicate event system");
 
         for handler in S::EVENT_HANDLERS.iter().cloned() {
             self.handler_map.push(handler);
