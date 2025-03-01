@@ -1,12 +1,14 @@
 #![feature(ptr_metadata)]
 use std::{any::{Any, TypeId}, sync::{Arc, RwLock}};
-use event_handler::EventHandler;
 use typemap::ShareTypeMap;
 use hashbrown::{HashMap, hash_map::Entry};
 
 pub mod event_handler;
 pub mod event_manager;
 pub mod typemap;
+
+pub use event_manager::EventManager;
+pub use event_handler::EventHandler;
 
 #[macro_export]
 macro_rules! handlers {
@@ -85,11 +87,11 @@ pub struct RayonExecutionManager {
 }
 
 impl RayonExecutionManager {
-    pub fn new(num_threads: usize) -> Self {
-        let pool = rayon::ThreadPoolBuilder::new().num_threads(num_threads).build().unwrap();
-        Self {
+    pub fn new(num_threads: usize) -> Result<Self, rayon::ThreadPoolBuildError>  {
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(num_threads).build()?;
+        Ok(Self {
             pool,
-        }
+        })
     }
 }
 

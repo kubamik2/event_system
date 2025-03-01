@@ -60,7 +60,7 @@ impl EventManager {
         let _ = self.queued_sender.send(Box::new(event));
     }
 
-    fn flush_from_receiver(receiver: &Receiver<Box<dyn Any + Send + Sync>>, systems: &mut HashMap<TypeId, Box<dyn Any + Send + Sync>>, handler_map: &EventHandlerMap, execution_scheduler: &mut Box<dyn ExecutionManager>) -> usize {
+    fn flush_from_receiver(receiver: &Receiver<Box<dyn Any + Send + Sync>>, systems: &mut HashMap<TypeId, Box<dyn Any + Send + Sync>>, handler_map: &EventHandlerMap, execution_manager: &mut Box<dyn ExecutionManager>) -> usize {
         let mut events_handled = 0;
         let events = receiver.try_iter().collect::<Vec<Box<dyn Any + Send + Sync>>>();
         let mut queried_systems: Vec<Box<dyn Any + Send + Sync>> = Vec::new();
@@ -90,19 +90,20 @@ impl EventManager {
         for event in events.iter().map(|f| f.as_ref()) {
             let Some(handlers) = handler_map.get(&event.type_id()) else { continue; };
             for handler in handlers {
-                let package = execution_packages.get_mut(&handler.event_system_type_id()).unwrap();
+                let package = execution_packages.get_mut(&handler.event_system_type_id()).expect("execution package event system type id missing");
                 package.handler_event_pairs.push((*handler, event));
             }
         }
 
-        // execute packages using provided scheduler
-        execution_scheduler.execute(execution_packages);
+        // execute packages using provided manager
+        execution_manager.execute(execution_packages);
         
 
         // return systems back
         for system in queried_systems {
             systems.insert((*system).type_id(), system);
         }
+
         events_handled
     }
 
