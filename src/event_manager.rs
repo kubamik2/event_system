@@ -71,7 +71,6 @@ impl EventManager {
             let Some(handlers) = handler_map.get(&event.type_id()) else { continue; };
             for handler in handlers {
                 if let Some(system) = systems.remove(&handler.event_system_type_id()) {
-                    events_handled += 1;
                     queried_systems.push(system);
                 }
             }
@@ -90,6 +89,7 @@ impl EventManager {
         for event in events.iter().map(|f| f.as_ref()) {
             let Some(handlers) = handler_map.get(&event.type_id()) else { continue; };
             for handler in handlers {
+                events_handled += 1;
                 let package = execution_packages.get_mut(&handler.event_system_type_id()).expect("execution package event system type id missing");
                 package.handler_event_pairs.push((*handler, event));
             }
@@ -108,6 +108,8 @@ impl EventManager {
     }
 
     pub fn flush(&mut self) {
+
+        while Self::flush_from_receiver(&self.in_progress_receiver, &mut self.systems, &self.handler_map, &mut self.execution_manager) > 0 {}
         if Self::flush_from_receiver(&self.queued_receiver, &mut self.systems, &self.handler_map, &mut self.execution_manager) > 0 {
             while Self::flush_from_receiver(&self.in_progress_receiver, &mut self.systems, &self.handler_map, &mut self.execution_manager) > 0 {}
         }
