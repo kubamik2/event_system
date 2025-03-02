@@ -119,4 +119,12 @@ impl EventManager {
             sender: self.in_progress_sender.clone(),
         }
     }
+
+    pub fn state(&self) -> &Arc<RwLock<ShareTypeMap>> {
+        &self.state
+    }
+
+    pub fn set_execution_manager<M: ExecutionManager>(&mut self, execution_manager: M) {
+        self.execution_manager = Box::new(execution_manager);
+    }
 }
