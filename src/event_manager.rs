@@ -124,7 +124,7 @@ impl EventManager {
         &self.state
     }
 
-    pub fn set_execution_manager<M: ExecutionManager>(&mut self, execution_manager: M) {
+    pub fn set_execution_manager<M: ExecutionManager + 'static>(&mut self, execution_manager: M) {
         self.execution_manager = Box::new(execution_manager);
     }
 }
