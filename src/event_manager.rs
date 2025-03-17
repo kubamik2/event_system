@@ -130,6 +130,7 @@ impl EventManager {
 
     pub fn set_read_only_state<F: FnOnce(ShareTypeMap)>(&mut self, f: F) {
         let mut read_only_state = ShareTypeMap::default();
+        f(&mut read_only_state);
         self.read_only_state = Arc::new(read_only_state);
     }
 
