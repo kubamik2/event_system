@@ -4,6 +4,7 @@ use hashbrown::HashMap;
 
 pub struct EventManager {
     state: Arc<RwLock<ShareTypeMap>>,
+    read_only_state: Arc<ShareTypeMap>,
     handler_map: EventHandlerMap,
     systems: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
     queued_receiver: Receiver<Box<dyn Any + Send + Sync>>,
@@ -20,6 +21,7 @@ impl Default for EventManager {
 
         Self {
             state: Arc::new(RwLock::new(ShareTypeMap::default())),
+            read_only_state: Arc::new(ShareTypeMap::default()),
             systems: HashMap::new(),
             handler_map: EventHandlerMap::default(),
             queued_receiver,
@@ -108,7 +110,6 @@ impl EventManager {
     }
 
     pub fn flush(&mut self) {
-
         while Self::flush_from_receiver(&self.in_progress_receiver, &mut self.systems, &self.handler_map, &mut self.execution_manager) > 0 {}
         if Self::flush_from_receiver(&self.queued_receiver, &mut self.systems, &self.handler_map, &mut self.execution_manager) > 0 {
             while Self::flush_from_receiver(&self.in_progress_receiver, &mut self.systems, &self.handler_map, &mut self.execution_manager) > 0 {}
@@ -118,12 +119,22 @@ impl EventManager {
     pub(crate) fn ctx(&self) -> Context {
         Context {
             state: self.state.clone(),
+            read_only_state: self.read_only_state.clone(),
             sender: self.in_progress_sender.clone(),
         }
     }
 
     pub fn state(&self) -> &Arc<RwLock<ShareTypeMap>> {
         &self.state
+    }
+
+    pub fn set_read_only_state<F: FnOnce(ShareTypeMap)>(&mut self, f: F) {
+        let mut read_only_state = ShareTypeMap::default();
+        self.read_only_state = Arc::new(read_only_state);
+    }
+
+    pub fn read_only_state(&self) -> &Arc<ShareTypeMap> {
+        &self.read_only_state
     }
 
     pub fn set_execution_manager<M: ExecutionManager + 'static>(&mut self, execution_manager: M) {

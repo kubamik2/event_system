@@ -54,6 +54,7 @@ impl EventHandlerMap {
 
 pub struct Context {
     state: Arc<RwLock<ShareTypeMap>>,
+    read_only_state: Arc<ShareTypeMap>,
     sender: std::sync::mpsc::Sender<Box<dyn Any + Send + Sync>>,
 }
 
@@ -64,6 +65,10 @@ impl Context {
 
     pub fn state(&self) -> &Arc<RwLock<ShareTypeMap>> {
         &self.state
+    }
+
+    pub fn read_only_state(&self) -> &Arc<ShareTypeMap> {
+        &self.read_only_state
     }
 }
 
