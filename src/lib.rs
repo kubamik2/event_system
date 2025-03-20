@@ -6,6 +6,7 @@ use hashbrown::{HashMap, hash_map::Entry};
 pub mod event_handler;
 pub mod event_manager;
 pub mod typemap;
+pub mod util;
 
 pub use event_manager::EventManager;
 pub use event_handler::EventHandler;
@@ -13,7 +14,7 @@ pub use event_handler::EventHandler;
 #[macro_export]
 macro_rules! handlers {
     ($($f:expr),*) => {
-        &[ $(EventHandler::new($f),)* ]
+        &[ $(event_system::EventHandler::new($f),)* ]
     };
 }
 
@@ -30,7 +31,7 @@ pub struct EventSystemExecutionPackage<'a> {
 struct EventHandlerMap(HashMap<TypeId, Vec<EventHandler>>);
 
 impl EventHandlerMap {
-    pub fn get(&self, event_type_id: &TypeId) -> Option<&Vec<EventHandler>> {
+    fn get(&self, event_type_id: &TypeId) -> Option<&Vec<EventHandler>> {
         self.0.get(event_type_id)
     }
 
