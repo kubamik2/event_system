@@ -52,6 +52,7 @@ impl EventHandlerMap {
     }
 }
 
+#[derive(Clone)]
 pub struct Context {
     state: event_manager::ReadOnlyState,
     sender: std::sync::mpsc::Sender<Box<dyn Any + Send + Sync>>,
