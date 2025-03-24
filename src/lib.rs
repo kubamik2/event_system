@@ -7,7 +7,7 @@ mod event_manager;
 mod typemap;
 pub mod util;
 
-pub use event_manager::EventManager;
+pub use event_manager::{EventManager, ReadOnlyState};
 pub use event_handler::EventHandler;
 
 #[macro_export]
