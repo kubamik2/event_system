@@ -1,11 +1,10 @@
 #![feature(ptr_metadata)]
-use std::{any::{Any, TypeId}, sync::{Arc, RwLock}};
-use typemap::ShareTypeMap;
+use std::any::{Any, TypeId};
 use hashbrown::{HashMap, hash_map::Entry};
 
-pub mod event_handler;
-pub mod event_manager;
-pub mod typemap;
+mod event_handler;
+mod event_manager;
+mod typemap;
 pub mod util;
 
 pub use event_manager::EventManager;
@@ -54,8 +53,7 @@ impl EventHandlerMap {
 }
 
 pub struct Context {
-    state: Arc<RwLock<ShareTypeMap>>,
-    read_only_state: Arc<ShareTypeMap>,
+    state: event_manager::ReadOnlyState,
     sender: std::sync::mpsc::Sender<Box<dyn Any + Send + Sync>>,
 }
 
@@ -64,12 +62,8 @@ impl Context {
         let _ = self.sender.send(Box::new(event));
     }
 
-    pub fn state(&self) -> &Arc<RwLock<ShareTypeMap>> {
+    pub fn state(&self) -> &event_manager::ReadOnlyState {
         &self.state
-    }
-
-    pub fn read_only_state(&self) -> &Arc<ShareTypeMap> {
-        &self.read_only_state
     }
 }
 

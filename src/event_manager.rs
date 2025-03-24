@@ -1,10 +1,9 @@
-use std::{any::{Any, TypeId}, sync::{mpsc::{channel, Receiver, Sender}, Arc, RwLock}};
+use std::{any::{Any, TypeId}, sync::{mpsc::{channel, Receiver, Sender}, Arc}};
 use crate::{typemap::ShareTypeMap, Context, SequentialExecutionManager, EventHandlerMap, EventSystem, EventSystemExecutionPackage, ExecutionManager};
 use hashbrown::HashMap;
 
 pub struct EventManager {
-    state: Arc<RwLock<ShareTypeMap>>,
-    read_only_state: Arc<ShareTypeMap>,
+    state: ReadOnlyState,
     handler_map: EventHandlerMap,
     systems: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
     queued_receiver: Receiver<Box<dyn Any + Send + Sync>>,
@@ -20,8 +19,7 @@ impl Default for EventManager {
         let (in_progress_sender, in_progress_receiver) = channel();
 
         Self {
-            state: Arc::new(RwLock::new(ShareTypeMap::default())),
-            read_only_state: Arc::new(ShareTypeMap::default()),
+            state: Default::default(),
             systems: HashMap::new(),
             handler_map: EventHandlerMap::default(),
             queued_receiver,
@@ -84,8 +82,7 @@ impl EventManager {
             execution_packages.insert(type_id, EventSystemExecutionPackage {
                 event_system: system,
                 handler_event_pairs: Vec::new(),
-            });
-        }
+            }); }
 
         // add handlers to packages
         for event in events.iter().map(|f| f.as_ref()) {
@@ -119,26 +116,37 @@ impl EventManager {
     pub(crate) fn ctx(&self) -> Context {
         Context {
             state: self.state.clone(),
-            read_only_state: self.read_only_state.clone(),
             sender: self.in_progress_sender.clone(),
         }
     }
 
-    pub fn state(&self) -> &Arc<RwLock<ShareTypeMap>> {
+    pub fn state(&self) -> &ReadOnlyState {
         &self.state
     }
 
-    pub fn set_read_only_state<F: FnOnce(&mut ShareTypeMap)>(&mut self, f: F) {
+    pub fn set_state<F: FnOnce(&mut ShareTypeMap)>(&mut self, f: F) {
         let mut read_only_state = ShareTypeMap::default();
         f(&mut read_only_state);
-        self.read_only_state = Arc::new(read_only_state);
-    }
-
-    pub fn read_only_state(&self) -> &Arc<ShareTypeMap> {
-        &self.read_only_state
+        self.state = ReadOnlyState(Arc::new(read_only_state));
     }
 
     pub fn set_execution_manager<M: ExecutionManager + 'static>(&mut self, execution_manager: M) {
         self.execution_manager = Box::new(execution_manager);
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct ReadOnlyState(Arc<ShareTypeMap>);
+
+impl ReadOnlyState {
+    #[inline]
+    pub fn get<T: 'static + Send + Sync>(&self) -> &T {
+        self.0.get().unwrap_or_else(|| panic!("type '{}' not present in read only state", std::any::type_name::<T>()))
+    }
+}
+
+impl From<ShareTypeMap> for ReadOnlyState {
+    fn from(value: ShareTypeMap) -> Self {
+        Self(Arc::new(value))
     }
 }
