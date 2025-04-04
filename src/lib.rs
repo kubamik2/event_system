@@ -89,7 +89,10 @@ pub struct RayonExecutionManager {
 
 impl RayonExecutionManager {
     pub fn new(num_threads: usize) -> Result<Self, rayon::ThreadPoolBuildError>  {
-        let pool = rayon::ThreadPoolBuilder::new().num_threads(num_threads).build()?;
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(num_threads)
+            .use_current_thread()
+            .build()?;
         Ok(Self {
             pool,
         })
@@ -98,9 +101,9 @@ impl RayonExecutionManager {
 
 impl ExecutionManager for RayonExecutionManager {
     fn execute(&mut self, execution_packages: HashMap<TypeId, EventSystemExecutionPackage>) {
-        self.pool.scope(|scope| {
+        self.pool.in_place_scope(move |scope| {
             for execution_package in execution_packages.into_values() {
-                scope.spawn(|_| {
+                scope.spawn(move |_| {
                     for (handler, event) in execution_package.handler_event_pairs {
                         handler.execute(execution_package.event_system, event);
                     }
