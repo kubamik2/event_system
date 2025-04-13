@@ -23,7 +23,12 @@ pub trait EventSystem {
 
 pub struct EventSystemExecutionPackage<'a> {
     pub event_system: &'a mut (dyn Any + Send + Sync),
-    pub handler_event_pairs: Vec<(EventHandler, &'a (dyn Any + Send + Sync))>,
+    pub executions: Vec<EventHandlerExecution<'a>>,
+}
+
+pub struct EventHandlerExecution<'a> {
+    pub event_handler: EventHandler,
+    pub event: &'a (dyn Any + Send + Sync),
 }
 
 #[derive(Default)]
@@ -76,8 +81,8 @@ pub struct SequentialExecutionManager;
 impl ExecutionManager for SequentialExecutionManager {
     fn execute(&mut self, execution_packages: HashMap<TypeId, EventSystemExecutionPackage>) {
         for execution_package in execution_packages.into_values() {
-            for (handler, event) in execution_package.handler_event_pairs {
-                handler.execute(execution_package.event_system, event);
+            for EventHandlerExecution { event_handler, event }  in execution_package.executions {
+                event_handler.execute(execution_package.event_system, event);
             }
         }
     }
@@ -104,8 +109,8 @@ impl ExecutionManager for RayonExecutionManager {
         self.pool.in_place_scope(move |scope| {
             for execution_package in execution_packages.into_values() {
                 scope.spawn(move |_| {
-                    for (handler, event) in execution_package.handler_event_pairs {
-                        handler.execute(execution_package.event_system, event);
+                    for EventHandlerExecution { event_handler, event } in execution_package.executions {
+                        event_handler.execute(execution_package.event_system, event);
                     }
                 });
             }

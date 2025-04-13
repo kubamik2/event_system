@@ -81,7 +81,7 @@ impl EventManager {
             let type_id = (*system).type_id();
             execution_packages.insert(type_id, EventSystemExecutionPackage {
                 event_system: system,
-                handler_event_pairs: Vec::new(),
+                executions: Vec::new(),
             }); }
 
         // add handlers to packages
@@ -90,7 +90,10 @@ impl EventManager {
             for handler in handlers {
                 events_handled += 1;
                 let package = execution_packages.get_mut(&handler.event_system_type_id()).expect("execution package event system type id missing");
-                package.handler_event_pairs.push((*handler, event));
+                package.executions.push(crate::EventHandlerExecution {
+                    event_handler: *handler,
+                    event,
+                });
             }
         }
 
