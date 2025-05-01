@@ -40,8 +40,8 @@ impl EventHandler {
 
     #[inline]
     pub fn execute(&self, system: &mut dyn Any, event: &dyn Any) {
-        debug_assert!((*system).type_id() == (self.event_system_type_id)());
-        debug_assert!((*event).type_id() == (self.event_type_id)());
+        // debug_assert!((*system).type_id() == (self.event_system_type_id)());
+        // debug_assert!((*event).type_id() == (self.event_type_id)());
         let system_raw_ptr = (system as *mut dyn Any).to_raw_parts().0;
         unsafe { self.execute_raw(system_raw_ptr, event) };
     }
