@@ -31,7 +31,6 @@ macro_rules! dependencies {
 
 pub trait EventSystem: Send + Sync + Sized {
     const EVENT_HANDLERS: &'static [EventHandler] = &[];
-    const AFTER_EVENT_HANDLERS: &'static [EventHandler] = &[];
     const DEPENDENCIES: &'static [Dependency] = &[];
     fn event_system_ctx(&self) -> &EventSystemContext<Self>;
 }
